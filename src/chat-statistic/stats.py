@@ -34,10 +34,10 @@ class ChatStatistics:
     def generate_wordcloud(
         self,
         output_dir: Union[str, Path],
-        height=200,
-        width=400,
-        background_color='white',
-        max_font_size=None
+        height: int = 200,
+        width: int = 400,
+        background_color: str = 'white',
+        max_font_size: int = 200
     ):
         """Generate a word cloud from the chat data
 
@@ -76,9 +76,9 @@ class ChatStatistics:
 
 
 if __name__ == "__main__":
-    chat_stats = ChatStatistics(chat_json_file=DATA_DIR / 'Online.json')
+    chat_stats = ChatStatistics(chat_json_file=DATA_DIR / 'result.json')
     chat_stats.generate_wordcloud(
-        output_dir='/mnt/e/etc',
+        output_dir=DATA_DIR,
         height=600,
         width=800,
         max_font_size=250

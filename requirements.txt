@@ -1,0 +1,5 @@
+hazm==0.7.0
+wordcloud==1.8.2.2
+python-bidi==0.4.2
+arabic-reshaper==3.0.0
+loguru==0.6.0

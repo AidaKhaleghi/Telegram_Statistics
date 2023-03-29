@@ -2,13 +2,13 @@
 Export Statistics for a Telegram Group Chat
 
 ## How to Run
-First, in main repo directory, run the following code to add 'src' to your 'PYTHONPATH':
-'''
+First, in main repo directory, run the following code to add `src` to your `PYTHONPATH`:
+```
 export PYTHONPATH=${PWD}
-'''
+```
 
 Then run:
-'''
+```
 python src/chat-statistic/stats.py
-'''
-to generate a word cloud of json data in 'DATA_DIR'
+```
+to generate a word cloud of json data in `DATA_DIR`

@@ -1,10 +1,11 @@
 import json
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Union
 
 import arabic_reshaper
 from bidi.algorithm import get_display
-from hazm import Normalizer, word_tokenize
+from hazm import Normalizer, sent_tokenize, word_tokenize
 from loguru import logger
 from wordcloud import WordCloud
 
@@ -29,7 +30,64 @@ class ChatStatistics:
         logger.info(f'Loading stop words from {DATA_DIR / "stop_words.txt"}')
         stop_words = open(DATA_DIR / 'stop_words.txt').readlines()
         stop_words = list(map(str.strip, stop_words))
-        self.stop_words = list(map(self.normalizer.normalize, stop_words))
+        self.stop_words = set(map(self.normalizer.normalize, stop_words))
+
+    @staticmethod
+    def rebuild_msg(sub_messages) -> str:
+        msg_text = ''
+        for sub_msg in sub_messages:
+            if isinstance(sub_msg, str):
+                msg_text += sub_msg
+            elif 'text' in sub_msg:
+                msg_text += sub_msg['text']
+
+        return msg_text
+
+    def msg_has_question(self, msg) -> bool:
+        """Check if a message has a question
+
+        :param msg: message to check
+        """
+        if not isinstance(msg['text'], str):
+            msg['text'] = self.rebuild_msg(msg['text'])
+
+        sentences = sent_tokenize(msg['text'])
+        for sentence in sentences:
+            if ('?' not in msg['text']) or ('؟' not in msg['text']):
+                continue
+
+            return True
+
+    def get_top_users(self, top_n: int = 10) -> dict:
+        """Gets the top n users from the chat
+
+        :param top_n: number of users to get, default to 10
+        :return: dict of top users
+        """
+        # check messages for questions
+        is_question = defaultdict(bool)
+        for msg in self.chat_data['messages']:
+            if not isinstance(msg['text'], str):
+                msg['text'] = self.rebuild_msg(msg['text'])
+
+            sentences = sent_tokenize(msg['text'])
+            for sentence in sentences:
+                if ('?' not in sentence) and ('؟' not in sentence):
+                    continue
+                is_question[msg['id']] = True
+                break
+
+        # get top n users based on replying to questions from others
+        logger.info('Getting top users...')
+        users = []
+        for msg in self.chat_data['messages']:
+            if not msg.get('reply_to_message_id'):
+                continue
+            if is_question[msg['reply_to_message_id']] is False:
+                continue
+            users.append(msg['from'])
+
+        return dict(Counter(users).most_common())
 
     def generate_wordcloud(
         self,
@@ -53,7 +111,8 @@ class ChatStatistics:
         for msg in self.chat_data['messages']:
             if type(msg['text']) is str:
                 tokens = word_tokenize(msg['text'])
-                tokens = list(filter(lambda item: item not in self.stop_words, tokens))
+                tokens = list(filter(lambda item: item not in self.stop_words,
+                                     tokens))
                 text_contents += f" {' '.join(tokens)}"
 
         # normalize, reshape for final wordcloud
@@ -83,4 +142,8 @@ if __name__ == "__main__":
         width=800,
         max_font_size=250
     )
-    print('Done')
+
+    top_users = chat_stats.get_top_users(top_n=5)
+    print(top_users)
+
+    print('Done!')
